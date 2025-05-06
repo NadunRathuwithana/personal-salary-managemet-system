@@ -43,6 +43,13 @@ import {
   Label,
   Tooltip,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LabelList,
+  Cell,
 } from "recharts";
 
 // New component for financial health score
@@ -80,18 +87,6 @@ function FinancialHealthScore({ score = 78 }) {
               <span>Poor</span>
               <span>Good</span>
               <span>Excellent</span>
-            </div>
-            <div className="h-1 w-full bg-gray-200 rounded-full">
-              <div
-                className={`h-1 rounded-full ${
-                  score >= 80
-                    ? "bg-green-500"
-                    : score >= 60
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-                }`}
-                style={{ width: `${score}%` }}
-              ></div>
             </div>
           </div>
         </CardContent>
@@ -145,7 +140,7 @@ function MonthlySummary() {
   );
 }
 
-// Component for income categories - converted to radial bar chart
+// Component for income categories with bar chart
 function IncomeSourcesCard() {
   const formatCurrency = useFormatCurrency();
 
@@ -157,109 +152,72 @@ function IncomeSourcesCard() {
 
   const totalIncome = incomeData.reduce((sum, item) => sum + item.value, 0);
 
-  // For stacked radial chart format
-  const chartData = [
-    {
-      name: "Total",
-      Salary: 5000,
-      Freelance: 350,
-      Investments: 150,
-    },
-  ];
-
   return (
     <AnimatedWrapper type="subtle" hoverEffect="lift">
-      <Card className="h-[325px]">
-        <CardHeader className="p-3 pb-1.5">
+      <Card className="h-[325px] overflow-hidden">
+        <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-medium">Income Sources</CardTitle>
+          <span className="text-xs font-semibold text-primary">
+            {formatCurrency(totalIncome)}
+          </span>
         </CardHeader>
-        <CardContent className="p-3 pt-0 h-[calc(100%-40px)] flex flex-col justify-between">
-          <div className="flex justify-center items-center h-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart
-                innerRadius={30}
-                outerRadius={80}
-                barSize={12}
-                data={chartData}
-                startAngle={180}
-                endAngle={0}
-                cx="50%"
-                cy="80%"
-              >
-                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-                  <Label
-                    content={({ viewBox }) => {
-                      if (
-                        viewBox &&
-                        "cx" in viewBox &&
-                        "cy" in viewBox &&
-                        viewBox.cy !== undefined
-                      ) {
-                        const cx = viewBox.cx || 0;
-                        const cy = viewBox.cy;
-                        return (
-                          <text x={cx} y={cy - 30} textAnchor="middle">
-                            <tspan
-                              x={cx}
-                              y={cy - 35}
-                              className="fill-foreground text-xs font-medium"
-                            >
-                              Total
-                            </tspan>
-                            <tspan
-                              x={cx}
-                              y={cy - 15}
-                              className="fill-foreground text-sm font-bold"
-                            >
-                              {formatCurrency(totalIncome)}
-                            </tspan>
-                          </text>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                </PolarRadiusAxis>
-                <RadialBar
-                  dataKey="Salary"
-                  stackId="a"
-                  fill={incomeData[0].color}
-                  cornerRadius={5}
-                  className="stroke-transparent stroke-[1.5]"
-                />
-                <RadialBar
-                  dataKey="Freelance"
-                  stackId="a"
-                  fill={incomeData[1].color}
-                  cornerRadius={5}
-                  className="stroke-transparent stroke-[1.5]"
-                />
-                <RadialBar
-                  dataKey="Investments"
-                  stackId="a"
-                  fill={incomeData[2].color}
-                  cornerRadius={5}
-                  className="stroke-transparent stroke-[1.5]"
-                />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-              </RadialBarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-col gap-1 mt-auto">
-            {incomeData.map((item, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div
-                    className="h-1.5 w-1.5 rounded-full mr-1.5"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-[10px]">{item.name}</span>
+        <CardContent className="p-0">
+          <div className="flex flex-col h-full">
+            {/* Bar Chart */}
+            <div className="px-3 space-y-5 pb-3">
+              {incomeData.map((item) => (
+                <div key={item.name}>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-xs font-medium">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs">
+                        {formatCurrency(item.value)}
+                      </span>
+                      <span className="text-[9px] text-muted-foreground">
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-secondary/30 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${item.percentage}%`,
+                        backgroundColor: item.color,
+                      }}
+                    />
+                  </div>
                 </div>
-                <span className="text-[10px] font-medium">
-                  {formatCurrency(item.value)} ({item.percentage}%)
-                </span>
+              ))}
+            </div>
+
+            {/* Summary */}
+            <div className="mt-auto px-3 py-3 bg-secondary/10 border-t border-border/30">
+              <div className="grid grid-cols-3 gap-1">
+                {incomeData.map((item) => (
+                  <div key={item.name} className="flex flex-col">
+                    <span className="text-[9px] text-muted-foreground">
+                      {item.name}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <div
+                        className="h-1.5 w-1.5 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-xs font-medium">
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -281,55 +239,75 @@ function ExpenseCategoriesCard() {
 
   return (
     <AnimatedWrapper type="subtle" hoverEffect="lift">
-      <Card className="h-[325px]">
-        <CardHeader className="p-3 pb-1.5">
+      <Card className="h-[325px] overflow-hidden">
+        <CardHeader className="p-3 pb-1.5 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-medium">
             Expense Breakdown
           </CardTitle>
+          <Badge
+            variant="outline"
+            className="text-[9px] h-4 px-1.5 font-normal"
+          >
+            This Month
+          </Badge>
         </CardHeader>
-        <CardContent className="p-3 pt-0 h-[calc(100%-40px)] flex flex-col justify-between">
-          <div className="space-y-2 flex-grow overflow-auto">
-            {expenseData.map((item, index) => (
-              <div key={index} className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <div
-                    className="h-2 w-2 rounded-full mr-1.5"
-                    style={{ backgroundColor: item.color }}
-                  ></div>
-                  <span className="text-xs">{item.name}</span>
+        <CardContent className="p-0 h-[calc(100%-40px)]">
+          <div className="px-3 pt-1 space-y-3 h-full flex flex-col">
+            {/* Main content area */}
+            <div className="space-y-3 flex-grow overflow-auto pr-1">
+              {expenseData.map((item, index) => (
+                <div key={index} className="group">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className="h-3 w-3 rounded-sm transition-all group-hover:scale-110"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-xs font-medium group-hover:text-primary transition-colors">
+                        {item.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium">
+                        {formatCurrency(item.value)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground px-1.5 py-0.5 bg-secondary/50 rounded-full">
+                        {item.percentage}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full bg-secondary/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500 group-hover:opacity-90 group-hover:shadow-sm"
+                      style={{
+                        width: `${item.percentage}%`,
+                        backgroundColor: item.color,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-xs font-medium">
-                    {formatCurrency(item.value)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    ({item.percentage}%)
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="w-full h-1 bg-gray-100 rounded-full mt-3">
-            {expenseData.map((item, index) => {
-              // Calculate where this segment starts from (sum of previous percentages)
-              const previousPercentage = expenseData
-                .slice(0, index)
-                .reduce((sum, curr) => sum + curr.percentage, 0);
+              ))}
+            </div>
 
-              return (
-                <div
-                  key={`bar-${index}`}
-                  className="h-1 rounded-full"
-                  style={{
-                    width: `${item.percentage}%`,
-                    backgroundColor: item.color,
-                    marginLeft: index === 0 ? "0" : `${previousPercentage}%`,
-                    position: index === 0 ? "relative" : "absolute",
-                    top: 0,
-                  }}
-                />
-              );
-            })}
+            {/* Summary footer */}
+            <div className="mt-auto pt-3 pb-3 border-t border-border/30">
+              <div className="flex justify-between items-center">
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-muted-foreground">
+                    Total Expenses
+                  </span>
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(
+                      expenseData.reduce((sum, item) => sum + item.value, 0)
+                    )}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+                  View Details
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
